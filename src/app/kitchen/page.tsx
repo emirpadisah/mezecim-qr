@@ -1,11 +1,20 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { menuData } from '@/data/menu';
+import { MenuItem } from '@/data/menu';
 import { useLanguage } from '@/components/LanguageProvider';
-import { Order, OrderStatus, loadOrders, onOrdersUpdated, saveOrders, updateOrderStatus } from '@/lib/orderStore';
+import {
+  Order,
+  OrderStatus,
+  addOrder,
+  loadOrders,
+  onOrdersUpdated,
+  updateOrderStatus,
+} from '@/lib/orderStore';
+import { fetchMenuItems } from '@/lib/menuApi';
 
 const statusOrder: OrderStatus[] = ['new', 'preparing', 'ready', 'served'];
+const APP_NOW = Date.now();
 
 const statusLabels: Record<OrderStatus, { tr: string; en: string }> = {
   new: { tr: 'Yeni', en: 'New' },
@@ -14,94 +23,27 @@ const statusLabels: Record<OrderStatus, { tr: string; en: string }> = {
   served: { tr: 'Servis Edildi', en: 'Served' },
 };
 
-const createDemoOrders = (): Order[] => {
-  const now = new Date().toISOString();
-  return [
-    {
-      id: 'demo-1',
-      table: 'A-12',
-      createdAt: now,
-      status: 'new',
-      items: [
-        {
-          itemId: menuData[0].id,
-          name: menuData[0].name,
-          price: menuData[0].price,
-          quantity: 1,
-        },
-        {
-          itemId: menuData[4].id,
-          name: menuData[4].name,
-          price: menuData[4].price,
-          quantity: 2,
-        },
-      ],
-      note: 'Acısız olsun.',
-    },
-    {
-      id: 'demo-2',
-      table: 'B-07',
-      createdAt: now,
-      status: 'preparing',
-      items: [
-        {
-          itemId: menuData[6].id,
-          name: menuData[6].name,
-          price: menuData[6].price,
-          quantity: 1,
-        },
-      ],
-    },
-    {
-      id: 'demo-3',
-      table: 'C-02',
-      createdAt: now,
-      status: 'ready',
-      items: [
-        {
-          itemId: menuData[1].id,
-          name: menuData[1].name,
-          price: menuData[1].price,
-          quantity: 1,
-        },
-        {
-          itemId: menuData[9].id,
-          name: menuData[9].name,
-          price: menuData[9].price,
-          quantity: 1,
-        },
-      ],
-    },
-  ];
-};
-
 export default function KitchenPage() {
   const { language } = useLanguage();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [tableNo, setTableNo] = useState('');
+  const [note, setNote] = useState('');
+  const [status, setStatus] = useState<OrderStatus>('new');
+  const [selectedItemId, setSelectedItemId] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [lines, setLines] = useState<Order['items']>([]);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
 
   useEffect(() => {
-    const existing = loadOrders([]);
-    if (existing.length === 0) {
-      const demo = createDemoOrders();
-      saveOrders(demo);
-      setOrders(demo);
-      return;
-    }
-    setOrders(existing);
+    setOrders(loadOrders([]));
+    fetchMenuItems([]).then(setMenuItems);
     return onOrdersUpdated(() => {
       setOrders(loadOrders([]));
     });
   }, []);
-
-  const grouped = useMemo(() => {
-    return statusOrder.reduce((acc, status) => {
-      acc[status] = orders.filter((order) => order.status === status);
-      return acc;
-    }, {} as Record<OrderStatus, Order[]>);
-  }, [orders]);
 
   const orderTotal = (order: Order) =>
     order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -110,7 +52,7 @@ export default function KitchenPage() {
     order.items.reduce((sum, item) => sum + item.quantity, 0);
 
   const minutesSince = (iso: string) => {
-    const diff = Date.now() - new Date(iso).getTime();
+    const diff = APP_NOW - new Date(iso).getTime();
     return Math.max(0, Math.floor(diff / 60000));
   };
 
@@ -137,10 +79,48 @@ export default function KitchenPage() {
     updateOrderStatus(order.id, next);
   };
 
-  const resetDemo = () => {
-    const demo = createDemoOrders();
-    saveOrders(demo);
-    setOrders(demo);
+  const addLine = () => {
+    const item = menuItems.find((m) => m.id === selectedItemId);
+    if (!item || quantity < 1) return;
+    setLines((prev) => {
+      const existing = prev.find((l) => l.itemId === item.id);
+      if (existing) {
+        return prev.map((l) =>
+          l.itemId === item.id ? { ...l, quantity: l.quantity + quantity } : l
+        );
+      }
+      return [
+        ...prev,
+        {
+          itemId: item.id,
+          name: item.name,
+          price: item.price,
+          quantity,
+        },
+      ];
+    });
+    setQuantity(1);
+  };
+
+  const removeLine = (itemId: string) => {
+    setLines((prev) => prev.filter((l) => l.itemId !== itemId));
+  };
+
+  const createOrder = () => {
+    if (!tableNo || lines.length === 0) return;
+    addOrder({
+      id: crypto?.randomUUID?.() ?? String(Date.now()),
+      table: tableNo,
+      createdAt: new Date().toISOString(),
+      status,
+      note: note || undefined,
+      items: lines,
+    });
+    setTableNo('');
+    setNote('');
+    setStatus('new');
+    setSelectedItemId('');
+    setLines([]);
   };
 
   return (
@@ -152,12 +132,6 @@ export default function KitchenPage() {
             <p className="text-sm text-gray-500">Siparişleri duruma göre yönetin.</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={resetDemo}
-              className="px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border border-gray-200"
-            >
-              Demo Siparişleri Yükle
-            </button>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest')}
@@ -168,6 +142,119 @@ export default function KitchenPage() {
             </select>
           </div>
         </header>
+
+        <section className="bg-white rounded-[2rem] p-5 border border-gray-100 space-y-4">
+          <h2 className="text-sm font-black uppercase tracking-widest text-primary/50">
+            Sipariş Ekle
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-xs font-black uppercase tracking-widest text-primary/50">
+                Masa
+              </label>
+              <input
+                value={tableNo}
+                onChange={(e) => setTableNo(e.target.value)}
+                placeholder="A-12"
+                className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-black uppercase tracking-widest text-primary/50">
+                Durum
+              </label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as OrderStatus)}
+                className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm"
+              >
+                {statusOrder.map((s) => (
+                  <option key={s} value={s}>
+                    {statusLabels[s][language]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-black uppercase tracking-widest text-primary/50">
+                Not
+              </label>
+              <input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="İsteğe bağlı"
+                className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <label className="text-xs font-black uppercase tracking-widest text-primary/50">
+                Ürün
+              </label>
+              <select
+                value={selectedItemId}
+                onChange={(e) => setSelectedItemId(e.target.value)}
+                className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm"
+              >
+                <option value="">Ürün seç</option>
+                {menuItems.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name[language]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-black uppercase tracking-widest text-primary/50">
+                Adet
+              </label>
+              <input
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={addLine}
+              className="px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border border-gray-200"
+            >
+              Ürün Ekle
+            </button>
+            <button
+              onClick={createOrder}
+              className="px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest bg-primary text-white"
+            >
+              Siparişi Kaydet
+            </button>
+          </div>
+
+          {lines.length > 0 && (
+            <div className="space-y-2 text-xs">
+              {lines.map((line) => (
+                <div
+                  key={line.itemId}
+                  className="flex items-center justify-between border border-gray-100 rounded-2xl p-2"
+                >
+                  <span>
+                    {line.quantity}x {line.name[language]}
+                  </span>
+                  <button
+                    onClick={() => removeLine(line.itemId)}
+                    className="text-red-500 text-[10px] font-black uppercase tracking-widest"
+                  >
+                    Kaldır
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
         <section className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           <div className="bg-white rounded-[2rem] p-5 border border-gray-100">

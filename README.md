@@ -1,70 +1,186 @@
 # 🍽️ Mezecim QR Menü Sistemi
 
-Mezecim Gurme Meze Evi için tasarlanmış, modern, hızlı ve kullanıcı dostu bir dijital QR menü çözümüdür. Bu sistem, müşterilerin masalarındaki QR kodu okutarak işletmenin taze ve lezzetli menüsüne anında, uygulama indirmeden ulaşmasını sağlar.
+Mezecim Gurme Meze Evi için tasarlanmış, modern ve kullanıcı dostu bir **dijital QR menü** çözümüdür. Müşteriler QR kodla menüye girer; admin panel üzerinden ürün, kategori ve görsel yönetimi yapılır.
 
-## 🚀 Mevcut Özellikler
+## ✅ Güncel Özellikler
 
--   **Premium Hibrit Tasarım:** Masaüstünde profesyonel bir dashboard görünümü, mobilde ise akıcı bir uygulama (PWA) deneyimi sunar.
--   **Akıllı Filtreleme:** Ürünler; Mezeler, Zeytinyağlılar, Salatalar, Turşular ve Tatlılar olarak kategorize edilmiştir. Ayrıca "Tüm Menü" seçeneği ile hızlı tarama yapılabilir.
--   **Canlı Arama:** Müşteriler istedikleri lezzeti hem isimden hem de içerik açıklamasından anında bulabilir.
--   **Detaylı Ürün İnceleme:** Her ürün için aşağıdan açılan (mobil) veya merkezde odaklanan (masaüstü) detay pencereleri.
--   **Hizmet Butonları:** Müşterinin tek tıkla garson çağırabileceği interaktif alt panel.
--   **Yönetici QR Paneli:** İşletme sahibinin masalara koymak üzere otomatik QR kod oluşturabileceği `/admin/qr` sayfası.
--   **Performans:** Next.js 14 ve Tailwind CSS kullanılarak yıldırım hızında yükleme süreleri.
+- **Mobil odaklı tasarım** (2’li grid, kompakt kartlar)
+- **TR / EN çoklu dil** desteği
+- **Canlı arama ve kategori filtreleme**
+- **Ürün detay modalı**
+- **Admin panel** (login + yönetim)
+  - Ürün listeleme / düzenleme / silme
+  - Yeni ürün ekleme
+  - Görsel yükleme (Supabase Storage veya local fallback)
+  - Kategori yönetimi (ekle / düzenle / sil)
+- **Mutfak paneli** (manuel sipariş ekleme + status yönetimi)
+- **Analitik paneli** (metrikler, durum dağılımı, yoğunluk, kategori dağılımı)
+- **QR oluşturma sayfası** (`/admin/qr`)
 
----
+## 🧭 Sayfalar
 
-## 🛠️ Teknik Altyapı
+- `/` : QR menü (müşteri ekranı)
+- `/admin/login` : Admin giriş
+- `/admin` : Ürünler & Kategoriler
+- `/admin/analytics` : Analitik
+- `/kitchen` : Mutfak paneli
+- `/admin/qr` : QR kod oluşturma
 
--   **Framework:** Next.js 14 (App Router)
--   **Styling:** Tailwind CSS (Modern & Responsive)
--   **Animations:** Framer Motion (Akıcı geçişler)
--   **Icons:** Lucide React
--   **QR Generation:** qrcode.react
+## ⚙️ Teknoloji
 
----
+- Next.js (App Router)
+- Tailwind CSS
+- Framer Motion
+- Lucide Icons
+- Supabase (DB + Storage)
 
-## 💡 Gelecek Geliştirme Önerileri
+## 🧰 Supabase Kurulumu
 
-Sistemi daha da ileriye taşımak için şu özellikler eklenebilir:
+### 1) ENV Değerleri
+`.env.local` oluştur:
+```env
+NEXT_PUBLIC_SUPABASE_URL=YOUR_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
+```
 
-1.  **Dijital Sipariş Yönetimi:**
-    *   Müşterilerin sepete ürün ekleyip direkt masadan sipariş verebilmesi.
-    *   Mutfak için bir "Sipariş Takip Ekranı".
+### 2) Storage Bucket
+Supabase Storage’da bucket oluştur:
+```
+menu-images
+```
+Public olarak işaretle.
 
-2.  **Online Ödeme Entegrasyonu:**
-    *   Iyzico veya Stripe ile masada temassız ödeme imkanı.
+### 3) Tablolar (SQL)
+Tüm tabloları ve RLS policy’lerini kurmak için tek seferlik SQL:
+```sql
+create extension if not exists "pgcrypto";
 
-3.  **Çoklu Dil Desteği (i18n):**
-    *   Özellikle turistik bölgeler için İngilizce, Almanca ve Rusça dil seçenekleri.
+create table if not exists categories (
+  id text primary key,
+  labels jsonb not null,
+  icon text not null,
+  sort_order int default 0
+);
 
-4.  **Yönetim Paneli (Admin Dashboard):**
-    *   Ürün fiyatlarını, stok durumunu ve görsellerini kod yazmadan değiştirebileceğiniz bir arayüz.
-    *   Günlük/Aylık satış analizleri ve en çok tercih edilen ürünler raporu.
+create table if not exists menu_items (
+  id uuid primary key default gen_random_uuid(),
+  category_id text references categories(id) on delete cascade,
+  name jsonb not null,
+  description jsonb not null,
+  price numeric(10,2) not null,
+  image_url text not null,
+  is_available boolean default true,
+  is_popular boolean default false,
+  created_at timestamptz default now()
+);
 
-5.  **Müşteri Yorum & Puanlama:**
-    *   Ürün bazlı yıldız puanlama ve anonim yorum bırakma özelliği.
+create table if not exists admin_users (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  is_admin boolean default true
+);
 
-6.  **Sadakat Programı:**
-    *   "5 Meze Alana 1 Meze Bedava" gibi QR bazlı dijital sadakat kartları.
+create table if not exists orders (
+  id uuid primary key default gen_random_uuid(),
+  table_no text not null,
+  status text not null default 'new',
+  note text,
+  created_at timestamptz default now()
+);
 
----
+create table if not exists order_items (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid references orders(id) on delete cascade,
+  menu_item_id uuid references menu_items(id) on delete set null,
+  name jsonb not null,
+  price numeric(10,2) not null,
+  quantity int not null
+);
 
-## 🏃‍♂️ Kurulum ve Çalıştırma
+create or replace view analytics_order_summary as
+select
+  date_trunc('day', o.created_at) as day,
+  count(distinct o.id) as total_orders,
+  sum(oi.price * oi.quantity) as total_revenue,
+  sum(oi.quantity) as total_items
+from orders o
+join order_items oi on oi.order_id = o.id
+group by 1
+order by 1 desc;
 
-Projeyi yerel makinenizde çalıştırmak için:
+alter table categories enable row level security;
+alter table menu_items enable row level security;
+alter table admin_users enable row level security;
+alter table orders enable row level security;
+alter table order_items enable row level security;
 
-1.  Bağımlılıkları yükleyin:
-    ```bash
-    npm install
-    ```
-2.  Geliştirme sunucusunu başlatın:
+create policy "public read categories"
+on categories for select using (true);
+
+create policy "public read menu_items"
+on menu_items for select using (true);
+
+create policy "admin write categories"
+on categories for all using (
+  exists (select 1 from admin_users where user_id = auth.uid() and is_admin = true)
+);
+
+create policy "admin write menu_items"
+on menu_items for all using (
+  exists (select 1 from admin_users where user_id = auth.uid() and is_admin = true)
+);
+
+create policy "admin read admin_users"
+on admin_users for select using (user_id = auth.uid());
+
+create policy "admin write admin_users"
+on admin_users for insert with check (user_id = auth.uid());
+
+create policy "admin read orders"
+on orders for select using (
+  exists (select 1 from admin_users where user_id = auth.uid() and is_admin = true)
+);
+
+create policy "admin write orders"
+on orders for all using (
+  exists (select 1 from admin_users where user_id = auth.uid() and is_admin = true)
+);
+
+create policy "admin read order_items"
+on order_items for select using (
+  exists (select 1 from admin_users where user_id = auth.uid() and is_admin = true)
+);
+
+create policy "admin write order_items"
+on order_items for all using (
+  exists (select 1 from admin_users where user_id = auth.uid() and is_admin = true)
+);
+```
+
+### 4) Admin Kullanıcısı
+Supabase Auth’ta user oluştur:
+- Email: `admin@meze.com`
+- Password: `1234`
+
+Sonra admin_users tablosuna ekle:
+```sql
+insert into admin_users (user_id, is_admin)
+select id, true
+from auth.users
+where email = 'admin@meze.com'
+on conflict (user_id) do nothing;
+```
+
+## 🏃‍♂️ Kurulum
 ```bash
+npm install
 npm run dev
-    ```
-3.  Tarayıcınızda `http://localhost:3000` adresini açın.
+```
+
+## 🧪 Notlar
+- Supabase env girilmezse sistem **localStorage fallback** ile çalışır.
+- Admin login demo (admin / 1234) yalnızca mock login sayfasında vardır; gerçek Auth için Supabase kullanılır.
 
 ---
 
-**Tasarım & Uygulama:** AI Coding Assistant
-**İşletme:** Mezecim Gurme Meze Evi
+**Tasarım & Uygulama:** AI Coding Assistant  
+**İşletme:** Mezecim Gurme Meze Evi  

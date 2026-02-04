@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { menuData, categories, MenuItem } from '@/data/menu';
+import { menuData, categories, MenuItem, Category } from '@/data/menu';
 import { useLanguage } from '@/components/LanguageProvider';
 import { t } from '@/i18n/translations';
-import { loadMenuItems, onMenuItemsUpdated } from '@/lib/menuStore';
+import { fetchMenuItems, fetchCategories, subscribeMenuUpdates } from '@/lib/menuApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Leaf,
@@ -14,7 +14,6 @@ import {
   Search,
   ShoppingBag,
   Info,
-  Star,
   X,
   Plus,
   LucideIcon,
@@ -37,6 +36,7 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [items, setItems] = useState<MenuItem[]>(menuData);
+  const [menuCategories, setMenuCategories] = useState<Category[]>(categories);
 
   // Disable body scroll when modal is open
   useEffect(() => {
@@ -48,9 +48,11 @@ export default function Home() {
   }, [selectedItem]);
 
   useEffect(() => {
-    setItems(loadMenuItems(menuData));
-    return onMenuItemsUpdated(() => {
-      setItems(loadMenuItems(menuData));
+    fetchMenuItems(menuData).then(setItems);
+    fetchCategories(categories).then(setMenuCategories);
+    return subscribeMenuUpdates(() => {
+      fetchMenuItems(menuData).then(setItems);
+      fetchCategories(categories).then(setMenuCategories);
     });
   }, []);
 
@@ -65,7 +67,7 @@ export default function Home() {
   }, [selectedCategory, searchTerm, language, items]);
 
   const categoryLabel = (id: string) =>
-    categories.find((cat) => cat.id === id)?.labels[language] ?? id;
+    menuCategories.find((cat) => cat.id === id)?.labels[language] ?? id;
 
 
   return (
@@ -185,7 +187,7 @@ export default function Home() {
                 </button>
               </div>
               <div className="flex flex-wrap gap-2 pb-1">
-                {categories.map((cat) => {
+                {menuCategories.map((cat) => {
                   const Icon = iconMap[cat.icon] || Info;
                   const isActive = selectedCategory === cat.id;
                   return (

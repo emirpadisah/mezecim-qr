@@ -5,6 +5,9 @@ import { loadOrders, onOrdersUpdated, Order } from "@/lib/orderStore";
 import { menuData } from "@/data/menu";
 import { useLanguage } from "@/components/LanguageProvider";
 
+const APP_NOW = Date.now();
+const START_OF_TODAY = new Date(new Date(APP_NOW).toDateString()).getTime();
+
 type ItemStat = {
   itemId: string;
   name: string;
@@ -24,12 +27,11 @@ export default function AnalyticsPage() {
 
   const filteredOrders = useMemo(() => {
     if (range === "all") return orders;
-    const now = Date.now();
     const dayMs = 24 * 60 * 60 * 1000;
     const start =
       range === "today"
-        ? new Date(new Date().toDateString()).getTime()
-        : now - (range === "7d" ? 7 : 30) * dayMs;
+        ? START_OF_TODAY
+        : APP_NOW - (range === "7d" ? 7 : 30) * dayMs;
     return orders.filter((o) => new Date(o.createdAt).getTime() >= start);
   }, [orders, range]);
 

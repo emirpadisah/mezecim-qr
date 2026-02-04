@@ -1,16 +1,12 @@
 'use client';
 
 import { QRCodeSVG } from 'qrcode.react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export default function AdminQR() {
-  const [origin, setOrigin] = useState('');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setOrigin(window.location.origin);
-    }
-  }, []);
+  const [origin] = useState(() =>
+    typeof window !== 'undefined' ? window.location.origin : ''
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">

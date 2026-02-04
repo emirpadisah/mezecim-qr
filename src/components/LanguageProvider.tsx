@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState } from 'react';
 import type { Language } from '@/i18n/translations';
 
 type LanguageContextValue = {
@@ -13,15 +13,11 @@ const LanguageContext = createContext<LanguageContextValue | undefined>(undefine
 const STORAGE_KEY = 'mezecim_language';
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('tr');
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  const [language, setLanguageState] = useState<Language>(() => {
+    if (typeof window === 'undefined') return 'tr';
     const saved = window.localStorage.getItem(STORAGE_KEY) as Language | null;
-    if (saved === 'tr' || saved === 'en') {
-      setLanguageState(saved);
-    }
-  }, []);
+    return saved === 'tr' || saved === 'en' ? saved : 'tr';
+  });
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
