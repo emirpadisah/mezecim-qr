@@ -115,23 +115,27 @@ export async function saveCategory(category: Category) {
       ? current.map((c) => (c.id === category.id ? category : c))
       : [...current, category];
     saveLocalCategories(updated);
-    return;
+    return { ok: true };
   }
-  await supabase.from('categories').upsert({
+  const { error } = await supabase.from('categories').upsert({
     id: category.id,
     labels: category.labels,
     icon: category.icon || 'Leaf',
     sort_order: 0,
   });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
 export async function deleteCategory(id: string) {
   if (!supabase) {
     const current = loadLocalCategories([]);
     saveLocalCategories(current.filter((c) => c.id !== id));
-    return;
+    return { ok: true };
   }
-  await supabase.from('categories').delete().eq('id', id);
+  const { error } = await supabase.from('categories').delete().eq('id', id);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
 export async function saveMenuItem(item: MenuItem) {
@@ -141,7 +145,7 @@ export async function saveMenuItem(item: MenuItem) {
       ? existing.map((i) => (i.id === item.id ? item : i))
       : [...existing, item];
     saveMenuItems(updated);
-    return;
+    return { ok: true };
   }
 
   const payload = {
@@ -156,19 +160,24 @@ export async function saveMenuItem(item: MenuItem) {
   };
 
   if (item.id && item.id.trim() !== '') {
-    await supabase.from('menu_items').update(payload).eq('id', item.id);
-  } else {
-    await supabase.from('menu_items').insert(payload);
+    const { error } = await supabase.from('menu_items').update(payload).eq('id', item.id);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
   }
+  const { error } = await supabase.from('menu_items').insert(payload);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
 export async function deleteMenuItem(id: string) {
   if (!supabase) {
     const existing = loadMenuItems([]);
     saveMenuItems(existing.filter((i) => i.id !== id));
-    return;
+    return { ok: true };
   }
-  await supabase.from('menu_items').delete().eq('id', id);
+  const { error } = await supabase.from('menu_items').delete().eq('id', id);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
 export function subscribeMenuUpdates(callback: () => void) {

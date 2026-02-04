@@ -43,6 +43,7 @@ export default function AdminPage() {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [priceInput, setPriceInput] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const supabaseEnabled = isSupabaseEnabled();
 
   useEffect(() => {
@@ -114,15 +115,23 @@ export default function AdminPage() {
     if (Number.isNaN(price)) return;
     const payload = editingId
       ? { ...draft, price }
-      : { ...draft, price, id: crypto?.randomUUID?.() ?? String(Date.now()) };
-    await saveMenuItem(payload);
+      : { ...draft, price, id: '' };
+    const result = await saveMenuItem(payload);
+    if (result?.ok === false) {
+      setErrorMessage(result.error ?? 'Kayıt hatası.');
+      return;
+    }
     const refreshed = await fetchMenuItems(menuData);
     setItems(refreshed);
     clearDraft();
   };
 
   const handleDelete = async (id: string) => {
-    await deleteMenuItem(id);
+    const result = await deleteMenuItem(id);
+    if (result?.ok === false) {
+      setErrorMessage(result.error ?? 'Silme hatası.');
+      return;
+    }
     const refreshed = await fetchMenuItems(menuData);
     setItems(refreshed);
   };
@@ -145,14 +154,22 @@ export default function AdminPage() {
 
   const handleSaveCategory = async () => {
     if (!categoryDraft.id || !categoryDraft.labels.tr || !categoryDraft.labels.en) return;
-    await saveCategory(categoryDraft);
+    const result = await saveCategory(categoryDraft);
+    if (result?.ok === false) {
+      setErrorMessage(result.error ?? 'Kategori kayıt hatası.');
+      return;
+    }
     const refreshed = await fetchCategories(categories);
     setMenuCategories(refreshed);
     clearCategoryDraft();
   };
 
   const handleDeleteCategory = async (id: string) => {
-    await deleteCategory(id);
+    const result = await deleteCategory(id);
+    if (result?.ok === false) {
+      setErrorMessage(result.error ?? 'Kategori silme hatası.');
+      return;
+    }
     const refreshed = await fetchCategories(categories);
     setMenuCategories(refreshed);
   };
@@ -187,6 +204,19 @@ export default function AdminPage() {
             </button>
           </div>
         </header>
+
+        {!supabaseEnabled && (
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 text-xs rounded-2xl px-4 py-3">
+            Supabase bağlı değil. Veriler sadece tarayıcıda saklanır; veritabanına
+            yazılmaz.
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-2xl px-4 py-3">
+            {errorMessage}
+          </div>
+        )}
 
         <section className="bg-white rounded-[2rem] p-4 border border-gray-100 flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-widest">
           <button
