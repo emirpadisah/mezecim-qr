@@ -18,8 +18,18 @@ export function loadMenuItems(defaultItems: MenuItem[]): MenuItem[] {
 
 export function saveMenuItems(items: MenuItem[]) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  window.dispatchEvent(new Event(UPDATE_EVENT));
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    window.dispatchEvent(new Event(UPDATE_EVENT));
+  } catch (error) {
+    // Fallback: strip large inline images to avoid quota errors.
+    const sanitized = items.map((item) => ({
+      ...item,
+      image: item.image.startsWith('data:') ? '' : item.image,
+    }));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
+    window.dispatchEvent(new Event(UPDATE_EVENT));
+  }
 }
 
 export function resetMenuItems(defaultItems: MenuItem[]) {
