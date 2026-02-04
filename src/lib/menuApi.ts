@@ -5,8 +5,20 @@ import { loadMenuItems, onMenuItemsUpdated, saveMenuItems } from '@/lib/menuStor
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+const isValidHttpUrl = (value?: string) => {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 const supabase =
-  supabaseUrl && supabaseAnon ? createClient(supabaseUrl, supabaseAnon) : null;
+  isValidHttpUrl(supabaseUrl) && supabaseAnon
+    ? createClient(supabaseUrl, supabaseAnon)
+    : null;
 
 export const isSupabaseEnabled = () => Boolean(supabase);
 
@@ -134,7 +146,7 @@ export async function saveMenuItem(item: MenuItem) {
     is_popular: item.isPopular ?? false,
   };
 
-  if (item.id) {
+  if (item.id && item.id.trim() !== '') {
     await supabase.from('menu_items').update(payload).eq('id', item.id);
   } else {
     await supabase.from('menu_items').insert(payload);
