@@ -17,7 +17,7 @@ const isValidHttpUrl = (value?: string) => {
 
 const supabase =
   isValidHttpUrl(supabaseUrl) && supabaseAnon
-    ? createClient(supabaseUrl, supabaseAnon)
+    ? createClient(supabaseUrl!, supabaseAnon)
     : null;
 
 export const isSupabaseEnabled = () => Boolean(supabase);
