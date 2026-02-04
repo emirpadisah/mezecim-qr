@@ -40,13 +40,22 @@ type CategoryRow = {
   sort_order: number | null;
 };
 
+const normalizeImageUrl = (value: string) => {
+  if (!value) return '';
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  if (isValidHttpUrl(supabaseUrl)) {
+    return `${supabaseUrl}/storage/v1/object/public/menu-images/${value.replace(/^\/+/, '')}`;
+  }
+  return value;
+};
+
 const mapRowToItem = (row: MenuRow): MenuItem => ({
   id: row.id,
   name: row.name,
   description: row.description,
   price: row.price,
   category: row.category_id,
-  image: row.image_url,
+  image: normalizeImageUrl(row.image_url),
   isAvailable: row.is_available,
   isPopular: row.is_popular,
 });
