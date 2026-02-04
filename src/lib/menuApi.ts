@@ -99,7 +99,7 @@ export async function saveCategory(category: Category) {
   await supabase.from('categories').upsert({
     id: category.id,
     labels: category.labels,
-    icon: category.icon,
+    icon: category.icon || 'Leaf',
     sort_order: 0,
   });
 }

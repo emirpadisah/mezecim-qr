@@ -42,6 +42,7 @@ export default function AdminPage() {
   });
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [priceInput, setPriceInput] = useState('');
   const supabaseEnabled = isSupabaseEnabled();
 
   useEffect(() => {
@@ -66,6 +67,7 @@ export default function AdminPage() {
     setDraft(item);
     setEditingId(item.id);
     setImagePreview(item.image || '');
+    setPriceInput(item.price ? String(item.price) : '');
     setTab('create');
   };
 
@@ -73,6 +75,7 @@ export default function AdminPage() {
     setDraft(emptyItem());
     setEditingId(null);
     setImagePreview('');
+    setPriceInput('');
   };
 
   const handleImageUpload = async (file?: File) => {
@@ -106,9 +109,12 @@ export default function AdminPage() {
   const handleSave = async () => {
     if (!draft.name.tr || !draft.name.en) return;
     if (!draft.image) return;
+    if (!priceInput) return;
+    const price = Number(priceInput.replace(',', '.'));
+    if (Number.isNaN(price)) return;
     const payload = editingId
-      ? draft
-      : { ...draft, id: crypto?.randomUUID?.() ?? String(Date.now()) };
+      ? { ...draft, price }
+      : { ...draft, price, id: crypto?.randomUUID?.() ?? String(Date.now()) };
     await saveMenuItem(payload);
     const refreshed = await fetchMenuItems(menuData);
     setItems(refreshed);
@@ -359,10 +365,12 @@ export default function AdminPage() {
                       Fiyat (₺)
                     </label>
                     <input
-                      type="number"
-                      value={draft.price}
-                      onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })}
+                      type="text"
+                      inputMode="decimal"
+                      value={priceInput}
+                      onChange={(e) => setPriceInput(e.target.value)}
                       className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm"
+                      placeholder="0"
                     />
                   </div>
                   <div>
@@ -504,16 +512,6 @@ export default function AdminPage() {
                       labels: { ...categoryDraft.labels, en: e.target.value },
                     })
                   }
-                  className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-black uppercase tracking-widest text-primary/50">
-                  Icon
-                </label>
-                <input
-                  value={categoryDraft.icon}
-                  onChange={(e) => setCategoryDraft({ ...categoryDraft, icon: e.target.value })}
                   className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm"
                 />
               </div>
