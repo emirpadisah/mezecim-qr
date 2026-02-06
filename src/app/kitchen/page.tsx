@@ -5,8 +5,22 @@ import { MenuItem } from '@/data/menu';
 import { useLanguage } from '@/components/LanguageProvider';
 import { fetchMenuItemsSupabase } from '@/lib/supabaseMenuApi';
 
-// OrderStatus tipi local olarak tanımlandı (orderStore kaldırıldığı için)
+// Order ve OrderStatus tipleri local olarak tanımlandı (orderStore kaldırıldığı için)
 type OrderStatus = 'new' | 'preparing' | 'ready' | 'served';
+type OrderLine = {
+  itemId: string;
+  name: { tr: string; en: string };
+  price: number;
+  quantity: number;
+};
+type Order = {
+  id: string;
+  table: string;
+  createdAt: string;
+  status: OrderStatus;
+  note?: string;
+  items: OrderLine[];
+};
 
 const statusOrder: OrderStatus[] = ['new', 'preparing', 'ready', 'served'];
 const APP_NOW = Date.now();
