@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { menuData, categories, MenuItem, Category } from '@/data/menu';
 import { useLanguage } from '@/components/LanguageProvider';
 import { t } from '@/i18n/translations';
-import { fetchMenuItems, fetchCategories, subscribeMenuUpdates } from '@/lib/menuApi';
+import { fetchMenuItemsSupabase as fetchMenuItems, fetchCategoriesSupabase as fetchCategories } from '@/lib/supabaseMenuApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Leaf,
@@ -48,12 +48,8 @@ export default function Home() {
   }, [selectedItem]);
 
   useEffect(() => {
-    fetchMenuItems(menuData).then(setItems);
-    fetchCategories(categories).then(setMenuCategories);
-    return subscribeMenuUpdates(() => {
-      fetchMenuItems(menuData).then(setItems);
-      fetchCategories(categories).then(setMenuCategories);
-    });
+    fetchMenuItems().then(setItems);
+    fetchCategories().then(setMenuCategories);
   }, []);
 
   const categoryLabel = (id: string) =>
