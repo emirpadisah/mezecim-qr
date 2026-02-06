@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { MenuItem } from '@/data/menu';
 import { useLanguage } from '@/components/LanguageProvider';
 import { fetchMenuItemsSupabase } from '@/lib/supabaseMenuApi';
-// TODO: Sipariş işlemleri için Supabase order/order_items API fonksiyonları eklenmeli
+
+// OrderStatus tipi local olarak tanımlandı (orderStore kaldırıldığı için)
+type OrderStatus = 'new' | 'preparing' | 'ready' | 'served';
 
 const statusOrder: OrderStatus[] = ['new', 'preparing', 'ready', 'served'];
 const APP_NOW = Date.now();
