@@ -3,15 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MenuItem } from '@/data/menu';
 import { useLanguage } from '@/components/LanguageProvider';
-import {
-  Order,
-  OrderStatus,
-  addOrder,
-  loadOrders,
-  onOrdersUpdated,
-  updateOrderStatus,
-} from '@/lib/orderStore';
-import { fetchMenuItems } from '@/lib/menuApi';
+import { fetchMenuItemsSupabase } from '@/lib/supabaseMenuApi';
+// TODO: Sipariş işlemleri için Supabase order/order_items API fonksiyonları eklenmeli
 
 const statusOrder: OrderStatus[] = ['new', 'preparing', 'ready', 'served'];
 const APP_NOW = Date.now();
@@ -38,11 +31,9 @@ export default function KitchenPage() {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
 
   useEffect(() => {
-    setOrders(loadOrders([]));
-    fetchMenuItems([]).then(setMenuItems);
-    return onOrdersUpdated(() => {
-      setOrders(loadOrders([]));
-    });
+    // TODO: Supabase'den siparişleri çek
+    fetchMenuItemsSupabase().then(setMenuItems);
+    // TODO: Supabase'den siparişleri çekme fonksiyonu eklenmeli
   }, []);
 
   const orderTotal = (order: Order) =>
@@ -73,10 +64,9 @@ export default function KitchenPage() {
     return sorted;
   }, [orders, statusFilter, search, sortBy, language]);
 
-  const advanceStatus = (order: Order) => {
-    const idx = statusOrder.indexOf(order.status);
-    const next = statusOrder[Math.min(idx + 1, statusOrder.length - 1)];
-    updateOrderStatus(order.id, next);
+  // TODO: Supabase ile sipariş durumunu güncelleme fonksiyonu eklenmeli
+  const advanceStatus = (order: any) => {
+    // Supabase ile update fonksiyonu çağrılacak
   };
 
   const addLine = () => {
@@ -106,16 +96,10 @@ export default function KitchenPage() {
     setLines((prev) => prev.filter((l) => l.itemId !== itemId));
   };
 
+  // TODO: Supabase ile yeni sipariş ekleme fonksiyonu eklenmeli
   const createOrder = () => {
     if (!tableNo || lines.length === 0) return;
-    addOrder({
-      id: crypto?.randomUUID?.() ?? String(Date.now()),
-      table: tableNo,
-      createdAt: new Date().toISOString(),
-      status,
-      note: note || undefined,
-      items: lines,
-    });
+    // Supabase'e yeni sipariş ekle
     setTableNo('');
     setNote('');
     setStatus('new');

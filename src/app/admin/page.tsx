@@ -4,13 +4,13 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { categories, menuData, MenuItem, Category } from '@/data/menu';
 import {
-  fetchMenuItems,
-  saveMenuItem,
-  deleteMenuItem,
-  fetchCategories,
-  saveCategory,
-  deleteCategory,
-} from '@/lib/menuApi';
+  fetchMenuItemsSupabase as fetchMenuItems,
+  saveMenuItemSupabase as saveMenuItem,
+  deleteMenuItemSupabase as deleteMenuItem,
+  fetchCategoriesSupabase as fetchCategories,
+  saveCategorySupabase as saveCategory,
+  deleteCategorySupabase as deleteCategory,
+} from '@/lib/supabaseMenuApi';
 import { useLanguage } from '@/components/LanguageProvider';
 import { t } from '@/i18n/translations';
 
