@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 'use client';
+'use client';
+export const dynamic = "force-dynamic";
 
 import { useEffect, useMemo, useState } from 'react';
 import { MenuItem } from '@/data/menu';
