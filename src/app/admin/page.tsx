@@ -107,7 +107,7 @@ export default function AdminPage() {
       : { ...draft, price, id: '' };
     const result = await saveMenuItem(payload);
     if (result?.ok === false) {
-      setErrorMessage(result.error ?? 'Kayıt hatası.');
+      setErrorMessage('Kayıt hatası.');
       return;
     }
     const refreshed = await fetchMenuItems(menuData);
@@ -118,7 +118,7 @@ export default function AdminPage() {
   const handleDelete = async (id: string) => {
     const result = await deleteMenuItem(id);
     if (result?.ok === false) {
-      setErrorMessage(result.error ?? 'Silme hatası.');
+      setErrorMessage('Silme hatası.');
       return;
     }
     const refreshed = await fetchMenuItems(menuData);
@@ -145,7 +145,7 @@ export default function AdminPage() {
     if (!categoryDraft.id || !categoryDraft.labels.tr || !categoryDraft.labels.en) return;
     const result = await saveCategory(categoryDraft);
     if (result?.ok === false) {
-      setErrorMessage(result.error ?? 'Kategori kayıt hatası.');
+      setErrorMessage('Kategori kayıt hatası.');
       return;
     }
     const refreshed = await fetchCategories(categories);
@@ -156,7 +156,7 @@ export default function AdminPage() {
   const handleDeleteCategory = async (id: string) => {
     const result = await deleteCategory(id);
     if (result?.ok === false) {
-      setErrorMessage(result.error ?? 'Kategori silme hatası.');
+      setErrorMessage('Kategori silme hatası.');
       return;
     }
     const refreshed = await fetchCategories(categories);
