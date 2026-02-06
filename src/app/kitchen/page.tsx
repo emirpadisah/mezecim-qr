@@ -381,8 +381,8 @@ export default function KitchenPage() {
                 )}
 
                 <div className="flex flex-wrap gap-2">
+                  {/* TODO: Supabase ile sipariş durumu güncelleme fonksiyonu eklenmeli */}
                   {statusOrder.map((status) => (
-                    {/* TODO: Supabase ile sipariş durumu güncelleme fonksiyonu eklenmeli */}
                     <button
                       key={status}
                       // onClick={() => updateOrderStatus(order.id, status)}
