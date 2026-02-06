@@ -44,8 +44,8 @@ export default function AdminPage() {
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    fetchMenuItems(menuData).then(setItems);
-    fetchCategories(categories).then(setMenuCategories);
+    fetchMenuItems().then(setItems);
+    fetchCategories().then(setMenuCategories);
   }, []);
 
   const categoryLabel = (id: string) =>
@@ -110,7 +110,7 @@ export default function AdminPage() {
       setErrorMessage('Kayıt hatası.');
       return;
     }
-    const refreshed = await fetchMenuItems(menuData);
+    const refreshed = await fetchMenuItems();
     setItems(refreshed);
     clearDraft();
   };
@@ -121,7 +121,7 @@ export default function AdminPage() {
       setErrorMessage('Silme hatası.');
       return;
     }
-    const refreshed = await fetchMenuItems(menuData);
+    const refreshed = await fetchMenuItems();
     setItems(refreshed);
   };
 
@@ -148,7 +148,7 @@ export default function AdminPage() {
       setErrorMessage('Kategori kayıt hatası.');
       return;
     }
-    const refreshed = await fetchCategories(categories);
+    const refreshed = await fetchCategories();
     setMenuCategories(refreshed);
     clearCategoryDraft();
   };
@@ -159,7 +159,7 @@ export default function AdminPage() {
       setErrorMessage('Kategori silme hatası.');
       return;
     }
-    const refreshed = await fetchCategories(categories);
+    const refreshed = await fetchCategories();
     setMenuCategories(refreshed);
   };
 
