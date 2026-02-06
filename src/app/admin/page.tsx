@@ -7,8 +7,6 @@ import {
   fetchMenuItems,
   saveMenuItem,
   deleteMenuItem,
-  uploadMenuImage,
-  isSupabaseEnabled,
   fetchCategories,
   saveCategory,
   deleteCategory,
@@ -44,7 +42,6 @@ export default function AdminPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [priceInput, setPriceInput] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const supabaseEnabled = isSupabaseEnabled();
 
   useEffect(() => {
     fetchMenuItems(menuData).then(setItems);
@@ -81,14 +78,6 @@ export default function AdminPage() {
 
   const handleImageUpload = async (file?: File) => {
     if (!file) return;
-    if (supabaseEnabled) {
-      const url = await uploadMenuImage(file);
-      if (url) {
-        setDraft((prev) => ({ ...prev, image: url }));
-        setImagePreview(url);
-      }
-      return;
-    }
     const reader = new FileReader();
     reader.onload = () => {
       const result = typeof reader.result === 'string' ? reader.result : '';
@@ -205,13 +194,6 @@ export default function AdminPage() {
           </div>
         </header>
 
-        {!supabaseEnabled && (
-          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 text-xs rounded-2xl px-4 py-3">
-            Supabase bağlı değil. Veriler sadece tarayıcıda saklanır; veritabanına
-            yazılmaz.
-          </div>
-        )}
-
         {errorMessage && (
           <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-2xl px-4 py-3">
             {errorMessage}
@@ -272,14 +254,12 @@ export default function AdminPage() {
                     İptal
                   </button>
                 )}
-                {!supabaseEnabled && (
-                  <button
-                    onClick={handleReset}
-                    className="px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border border-gray-200"
-                  >
-                    Varsayılanlara Dön
-                  </button>
-                )}
+                <button
+                  onClick={handleReset}
+                  className="px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest border border-gray-200"
+                >
+                  Varsayılanlara Dön
+                </button>
               </div>
             </div>
 

@@ -56,18 +56,29 @@ export default function Home() {
     });
   }, []);
 
-  const filteredMenu = useMemo(() => {
-    const q = searchTerm.toLowerCase();
-    return items.filter(
-      (item) =>
-        (selectedCategory === 'hepsi' || item.category === selectedCategory) &&
-        (item.name[language].toLowerCase().includes(q) ||
-         item.description[language].toLowerCase().includes(q))
-    );
-  }, [selectedCategory, searchTerm, language, items]);
-
   const categoryLabel = (id: string) =>
     menuCategories.find((cat) => cat.id === id)?.labels[language] ?? id;
+
+  const normalizeCategoryId = (value: string) => {
+    const direct = menuCategories.find((cat) => cat.id === value);
+    if (direct) return direct.id;
+    const byLabel = menuCategories.find(
+      (cat) => cat.labels.tr === value || cat.labels.en === value
+    );
+    return byLabel?.id ?? value;
+  };
+
+  const filteredMenu = useMemo(() => {
+    const q = searchTerm.toLowerCase();
+    return items.filter((item) => {
+      const categoryId = normalizeCategoryId(item.category);
+      return (
+        (selectedCategory === 'hepsi' || categoryId === selectedCategory) &&
+        (item.name[language].toLowerCase().includes(q) ||
+          item.description[language].toLowerCase().includes(q))
+      );
+    });
+  }, [selectedCategory, searchTerm, language, items, menuCategories]);
 
 
   return (
